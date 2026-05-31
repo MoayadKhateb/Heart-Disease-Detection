@@ -1,0 +1,132 @@
+{% extends 'predictor/base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Heart Disease Prediction Dashboard</h1>
+        <p class="text-muted">Predict heart disease risk using a Random Forest model trained on the UCI Heart Disease dataset.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Predictions</h5>
+                <h2>{{ total_predictions }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">Positive</h5>
+                <h2>{{ positive_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Negative</h5>
+                <h2>{{ negative_count }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Prediction Results</h5></div>
+            <div class="card-body">
+                <canvas id="resultChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Age Distribution</h5></div>
+            <div class="card-body">
+                <canvas id="ageChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Predictions</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Age</th>
+                            <th>Sex</th>
+                            <th>Result</th>
+                            <th>Probability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in recent_predictions %}
+                        <tr>
+                            <td>{{ p.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ p.age }}</td>
+                            <td>{{ p.sex }}</td>
+                            <td>
+                                <span class="badge {% if p.result == 'Positive' %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ p.result }}
+                                </span>
+                            </td>
+                            <td>{{ p.probability|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No predictions yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ctx1 = document.getElementById('resultChart').getContext('2d');
+new Chart(ctx1, {
+    type: 'doughnut',
+    data: {
+        labels: ['Positive', 'Negative'],
+        datasets: [{
+            data: [{{ positive_count }}, {{ negative_count }}],
+            backgroundColor: ['#dc3545', '#198754'],
+        }]
+    }
+});
+
+const ctx2 = document.getElementById('ageChart').getContext('2d');
+new Chart(ctx2, {
+    type: 'bar',
+    data: {
+        labels: [{% for a in age_labels %}'{{ a }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Count',
+            data: [{{ age_data|join:"," }}],
+            backgroundColor: '#0d6efd',
+        }]
+    },
+    options: {
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+</script>
+{% endblock %}
